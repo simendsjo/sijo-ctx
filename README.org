@@ -1,0 +1,40 @@
+* Switching between profiles in contexts
+
+Switching between contexts. Heavily inspired by the =contextual= package.
+The reason I created this package was to make it easier to have activation
+and deactivation functions for each profile, and more granular hooks.
+
+Several contexts are supported, and optional on-activate and on-deactivate
+functions for when activating/deactivating a profile. Within a given
+context, only a single profile can be active at a time.
+
+Usage:
+
+#+begin_src elisp
+;; Set a suitable default context name to avoid the generic name
+(setf sijo-ctx-default-context 'profiles)
+
+;; Add a profile. Defining the activate and deactivate functions by
+;; themselves and referring them by the symbol (not #'), makes it easier to
+;; change them while developing.
+
+(defun profile1-on-activate ()
+  (message "Profile 1 activated"))
+
+(defun profile1-on-deactivate ()
+  (message "Profile 1 deactivated"))
+
+;; Use ' rather than #' for referring to the functions so you can replace
+;; them without having to add the profile again.
+(add-profile 'profile1
+             'profile1-on-activate
+             'profile1-on-deactivate)
+
+;; The last argument in the context.
+(add-profile 'work nil nil 'email)
+(add-profile 'private nil nil 'email)
+
+;; When switching to a profile, use \\[sijo-ctx-switch-to-profile] for
+;; profiles in the `sijo-ctx-default-context' and with
+;; \\[universal-argument] to select the context.
+#+end_src
