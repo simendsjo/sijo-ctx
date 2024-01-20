@@ -1,40 +1,85 @@
 * Switching between profiles in contexts
-
 Switching between contexts. Heavily inspired by the =contextual= package.
-The reason I created this package was to make it easier to have activation
-and deactivation functions for each profile, and more granular hooks.
 
-Several contexts are supported, and optional on-activate and on-deactivate
-functions for when activating/deactivating a profile. Within a given
-context, only a single profile can be active at a time.
+A context contains a list of profiles, where only a single profile might be
+active per context. When changing a profile, a user-defined function for
+deactivating the currently active profile is called before a user-defined
+function for activating the new profile.
 
-Usage:
+* Usage
+~M-x sijo-ctx-switch-profile~ to switch a profile in the
+~sijo-ctx-default-context~ context.
+
+~C-u M-x sijo-ctx-switch-profile~ to select a context before switching profile.
+
+The callback functions can be lambdas (~(lambda () )~), functions (~#'function~)
+or symbols (~'function~). ~'function~ is preferred as you can recompile the
+~function~ without having to register the profile again.
 
 #+begin_src elisp
-;; Set a suitable default context name to avoid the generic name
-(setf sijo-ctx-default-context 'profiles)
+(sijo-ctx-add-profile 'some-profile
+                      (lambda () (message "on activating"))
+                      (lambda () (message "on deactivating"))
+                      'some-context)
+#+end_src
 
-;; Add a profile. Defining the activate and deactivate functions by
-;; themselves and referring them by the symbol (not #'), makes it easier to
-;; change them while developing.
+* Example use-cases
+Switch between different clients
+#+begin_src elisp
+(sijo-ctx-add-profile 'apple
+                      (lambda () (message "Working for apple"))
+                      (lambda () (message "Unloading apple"))
+                      'client)
 
-(defun profile1-on-activate ()
-  (message "Profile 1 activated"))
+(sijo-ctx-add-profile 'fsf
+                      (lambda () (message "Working for fsf"))
+                      nil
+                      'client)
 
-(defun profile1-on-deactivate ()
-  (message "Profile 1 deactivated"))
+(sijo-ctx--activate-profile 'apple 'client)
+(sijo-ctx--activate-profile 'fsf 'client)
+#+end_src
 
-;; Use ' rather than #' for referring to the functions so you can replace
-;; them without having to add the profile again.
-(add-profile 'profile1
-             'profile1-on-activate
-             'profile1-on-deactivate)
+Different roles in a company
+#+begin_src elisp
+(sijo-ctx-add-profile 'developer
+                      (lambda () (message "developer mode"))
+                      nil
+                      'awesome-company)
 
-;; The last argument in the context.
-(add-profile 'work nil nil 'email)
-(add-profile 'private nil nil 'email)
+(sijo-ctx-add-profile 'tech-lead
+                      (lambda () (message "tech-lead mode"))
+                      nil
+                      'awesome-company)
+#+end_src
 
-;; When switching to a profile, use \\[sijo-ctx-switch-to-profile] for
-;; profiles in the `sijo-ctx-default-context' and with
-;; \\[universal-argument] to select the context.
+Different settings based on location
+#+begin_src elisp
+(sijo-ctx-add-profile '@home
+                      (lambda () (message "Home sweet home"))
+                      (lambda () (message "No longer home"))
+                      'location)
+
+(sijo-ctx-add-profile '@commute
+                      (lambda () (message "Train goes choo choo"))
+                      (lambda () (message "Elisp off rails"))
+                      'location)
+
+(sijo-ctx-add-profile '@office
+                      (lambda () (message "At the office"))
+                      (lambda () (message "Bye bye office"))
+                      'location)
+#+end_src
+
+Switching between multiple email accounts
+#+begin_src elisp
+(sijo-ctx-add-profile 'gmail
+                      (lambda () (message "Setup for gmail"))
+                      nil
+                      'email)
+
+(sijo-ctx-add-profile 'fastmail
+                      (lambda () (message "Setup for fastmail"))
+                      nil
+                      'email)
 #+end_src
